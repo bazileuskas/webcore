@@ -1,0 +1,9 @@
+# Render reads this when you create a Blueprint from the repository.
+services:
+  - type: web
+    name: tungtung-webcore-x7q
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /

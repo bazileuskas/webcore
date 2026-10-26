@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minimalist</title>
+  <meta name="description" content="Minimalist — a clean, simple web proxy.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Browse -->
+  <section id="view-browse" class="view">
+    <main id="home" class="home">
+      <h1 class="wordmark">minimalist<span class="dot">.</span></h1>
+
+      <form id="home-form" class="search" autocomplete="off">
+        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="home-input" type="text" placeholder="Search or type a URL" spellcheck="false" autocapitalize="off" aria-label="Search or type a URL" autofocus>
+      </form>
+
+      <nav class="links" aria-label="Quick links">
+        <button type="button" data-url="https://poki.com">Poki</button>
+        <button type="button" data-url="https://www.crazygames.com">CrazyGames</button>
+        <button type="button" data-url="https://www.youtube.com">YouTube</button>
+        <button type="button" data-url="https://discord.com/app">Discord</button>
+        <button type="button" data-url="https://en.wikipedia.org">Wikipedia</button>
+      </nav>
+
+      <footer class="hint">press <kbd>/</kbd> to search</footer>
+    </main>
+
+    <div id="browser" class="browser" hidden>
+      <header class="bar">
+        <button id="btn-home" class="icon" type="button" title="Home" aria-label="Home">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5"/><path d="M6 10v9h12v-9"/></svg>
+        </button>
+        <button id="btn-back" class="icon" type="button" title="Back" aria-label="Back">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <button id="btn-forward" class="icon" type="button" title="Forward" aria-label="Forward">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+        </button>
+        <button id="btn-reload" class="icon" type="button" title="Reload" aria-label="Reload">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12a7 7 0 1 1-2.05-4.95"/><path d="M19 4v4h-4"/></svg>
+        </button>
+        <form id="bar-form" class="address" autocomplete="off">
+          <input id="bar-input" type="text" spellcheck="false" autocapitalize="off" aria-label="Address">
+        </form>
+        <button id="btn-fullscreen" class="icon" type="button" title="Fullscreen" aria-label="Fullscreen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg>
+        </button>
+      </header>
+      <div class="loader" id="loader" hidden></div>
+      <iframe id="frame" title="Page" allow="fullscreen; autoplay; gamepad; clipboard-write; encrypted-media" allowfullscreen></iframe>
+    </div>
+  </section>
+
+  <!-- Games -->
+  <section id="view-games" class="view page" hidden>
+    <div class="page-inner">
+      <header class="page-head">
+        <h1 class="page-title">games<span class="dot">.</span></h1>
+        <p class="page-sub" id="games-count"></p>
+      </header>
+      <div class="search">
+        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="games-filter" type="search" placeholder="Search games" spellcheck="false" autocapitalize="off" aria-label="Search games">
+      </div>
+      <div class="chips" id="games-cats" aria-label="Categories"></div>
+      <div class="grid" id="games-grid"></div>
+      <p class="empty" id="games-empty" hidden>No games match that.</p>
+    </div>
+  </section>
+
+  <!-- Watch -->
+  <section id="view-watch" class="view page" hidden>
+    <div class="page-inner">
+      <header class="page-head">
+        <h1 class="page-title">watch<span class="dot">.</span></h1>
+        <p class="page-sub">YouTube videos, without going to YouTube</p>
+      </header>
+      <form id="watch-form" class="search" autocomplete="off">
+        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="watch-input" type="search" placeholder="Search videos" spellcheck="false" autocapitalize="off" aria-label="Search videos">
+      </form>
+      <div class="chips" id="watch-suggest" aria-label="Suggestions">
+        <button type="button" class="chip">lofi beats</button>
+        <button type="button" class="chip">minecraft</button>
+        <button type="button" class="chip">football highlights</button>
+        <button type="button" class="chip">science explained</button>
+        <button type="button" class="chip">funny animals</button>
+        <button type="button" class="chip">music videos</button>
+      </div>
+
+      <div id="player" class="player" hidden>
+        <div class="player-screen">
+          <iframe id="watch-frame" title="Video player" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        </div>
+        <div class="player-info">
+          <div>
+            <h2 id="player-title"></h2>
+            <p id="player-channel"></p>
+          </div>
+          <button id="player-close" class="icon" type="button" title="Close video" aria-label="Close video">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6 6 18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <p id="watch-status" class="empty" role="status" aria-live="polite">Search for something to watch.</p>
+      <div id="watch-results" class="video-grid"></div>
+    </div>
+  </section>
+
+  <!-- AI -->
+  <section id="view-ai" class="view" hidden>
+    <iframe id="ai-frame" class="full-frame" title="AI chat" allow="clipboard-write"></iframe>
+  </section>
+
+  <!-- Apps -->
+  <section id="view-apps" class="view page" hidden>
+    <div class="page-inner">
+      <header class="page-head">
+        <h1 class="page-title">apps<span class="dot">.</span></h1>
+        <p class="page-sub">they open in Browse</p>
+      </header>
+      <div class="grid" id="apps-grid"></div>
+    </div>
+  </section>
+
+  <!-- Menu -->
+  <nav id="dock" class="dock" aria-label="Sections">
+    <div class="dock-menu" id="dock-menu">
+      <div class="dock-panel">
+        <a href="#browse" data-view="browse">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18"/></svg>
+          Browse
+        </a>
+        <a href="#games" data-view="games">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M7.5 10.5v4"/><path d="M5.5 12.5h4"/><path d="M15.5 11.5h.01"/><path d="M17.5 13.5h.01"/></svg>
+          Games
+        </a>
+        <a href="#watch" data-view="watch">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3.5"/><path d="M10 9.5v5l4.5-2.5z"/></svg>
+          Watch
+        </a>
+        <a href="#ai" data-view="ai">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3.5l1.9 4.6 4.6 1.9-4.6 1.9L11 16.5l-1.9-4.6L4.5 10l4.6-1.9z"/><path d="M18 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>
+          AI
+        </a>
+        <a href="#apps" data-view="apps">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.75"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.75"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.75"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.75"/></svg>
+          Apps
+        </a>
+      </div>
+    </div>
+    <button id="dock-button" class="dock-button" type="button" aria-label="Menu" aria-controls="dock-menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18.5" cy="12" r="1.6"/></svg>
+    </button>
+  </nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="/scram/scramjet.all.js"></script>
+  <script src="/baremux/index.js"></script>
+  <script src="/catalog.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
