@@ -3,6 +3,7 @@ services:
   - type: web
     name: tungtung-webcore-x7q
     runtime: node
+    region: frankfurt # closest Render location to Spain
     plan: free
     buildCommand: npm ci
     startCommand: npm start
