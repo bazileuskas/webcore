@@ -3,7 +3,7 @@
 
 const SEARCH_ENGINE = "https://duckduckgo.com/?q=%s";
 const AI_URL = "https://duck.ai";
-const TRANSPORT = "/epoxy/index.mjs";
+const TRANSPORT = "/transport.mjs";
 const WISP_URL = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/wisp/`;
 const VIEWS = ["browse", "games", "watch", "ai", "apps"];
 
@@ -35,7 +35,7 @@ async function setup() {
   await navigator.serviceWorker.register("/sw.js");
   await navigator.serviceWorker.ready;
   if ((await connection.getTransport()) !== TRANSPORT) {
-    await connection.setTransport(TRANSPORT, [{ wisp: WISP_URL }]);
+    await connection.setTransport(TRANSPORT, [{ websocket: WISP_URL }]);
   }
 }
 

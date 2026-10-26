@@ -1,14 +1,16 @@
 import { createServer } from "node:http";
-import { join } from "node:path";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import { server as wisp, logging } from "@mercuryworkshop/wisp-js/server";
 import { scramjetPath } from "@mercuryworkshop/scramjet/path";
-import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 import { searchVideos } from "./youtube.js";
 
 const publicPath = fileURLToPath(new URL("../public/", import.meta.url));
+// This package has no Node entry point that gives its folder, so find it directly.
+const libcurlPath = dirname(createRequire(import.meta.url).resolve("@mercuryworkshop/libcurl-transport"));
 const port = Number(process.env.PORT) || 8080;
 
 logging.set_level(logging.WARN);
@@ -17,7 +19,7 @@ const app = express();
 
 app.use(express.static(publicPath));
 app.use("/scram/", express.static(scramjetPath));
-app.use("/epoxy/", express.static(epoxyPath));
+app.use("/libcurl/", express.static(libcurlPath));
 app.use("/baremux/", express.static(baremuxPath));
 
 // Watch: video search, and thumbnails served from here so they load even
