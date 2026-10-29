@@ -236,8 +236,36 @@ $("btn-fullscreen").addEventListener("click", () => page.frame.requestFullscreen
 
 let searchCount = 0;
 
+// Typing a site's name, like "google" or "cool math games", goes straight to
+// that site instead of listing pages about it.
+const compact = (text) => text.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+function knownSite(query) {
+  const name = compact(query);
+  return [...APPS, ...GAMES].find((item) => compact(item.name) === name)?.url ?? null;
+}
+
+// The name a homepage goes by: "google" for www.google.com, "bbc" for
+// bbc.co.uk. Subdomains like docs.google.com don't count.
+function siteName(hostname) {
+  const labels = hostname.replace(/^www\./, "").split(".");
+  if (labels.length === 2) return labels[0];
+  if (labels.length === 3 && labels[1].length <= 3) return labels[0];
+  return null;
+}
+
+function siteFromResults(query, list) {
+  const name = compact(query);
+  if (!name || query.trim().split(/\s+/).length > 3) return null;
+  const matches = list.filter((result) => compact(siteName(new URL(result.url).hostname) ?? "") === name);
+  const homepage = matches.find((result) => new URL(result.url).pathname.split("/").filter(Boolean).length <= 1);
+  return (homepage ?? matches[0])?.url ?? null;
+}
+
 async function search(query) {
   const current = ++searchCount;
+  const known = knownSite(query);
+  if (known) return openSite(known);
   showView("browse");
   showScreen(results);
   resultsInput.value = query;
@@ -252,6 +280,9 @@ async function search(query) {
     resultsStatus.hidden = data.results.length > 0;
     resultsStatus.textContent = "No results.";
     resultsList.replaceChildren(...data.results.map(resultItem));
+    // Open the site itself; the results stay behind it for the Back button.
+    const site = siteFromResults(query, data.results);
+    if (site) openSite(site, { viaResults: true });
   } catch (err) {
     if (current === searchCount) resultsStatus.textContent = err.message || "Search isn't working right now.";
   }

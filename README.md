@@ -6,6 +6,8 @@ Minimalist through your own server.
 The **•••** button in the bottom-left corner opens the menu:
 
 - **Browse**: the browser itself, with Minimalist's own search results page.
+  Typing a site's name (like `google` or `cool math games`) goes straight to
+  that site.
 - **Games**: 130+ free web games, searchable and sorted by category.
 - **Watch**: search and watch YouTube videos without going to youtube.com.
 - **AI**: [Duck.ai](https://duck.ai), DuckDuckGo's free AI chat.
