@@ -67,15 +67,23 @@ function whenReady() {
 
 const toast = $("toast");
 
-// Messages stay until tapped, so there's time to read them.
-function showMessage(message) {
-  const hint = document.createElement("small");
-  hint.textContent = "Tap to close";
-  toast.replaceChildren(message, hint);
+let toastAction = null;
+
+// Messages stay until tapped, so there's time to read them. Tapping can also
+// do something, like reloading.
+function showMessage(message, { hint = "Tap to close", onTap = null } = {}) {
+  const small = document.createElement("small");
+  small.textContent = hint;
+  toast.replaceChildren(message, small);
   toast.hidden = false;
+  toastAction = onTap;
 }
 
-toast.addEventListener("click", () => { toast.hidden = true; });
+toast.addEventListener("click", () => {
+  toast.hidden = true;
+  toastAction?.();
+  toastAction = null;
+});
 
 /* ---------- Sections and menu ---------- */
 
@@ -530,6 +538,14 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* ---------- Start ---------- */
+
+// When a new version of Minimalist goes live, its service worker takes over
+// this page. Offer a reload, so an open tab isn't left running old code.
+if (navigator.serviceWorker?.controller) {
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    showMessage("Minimalist was updated.", { hint: "Tap to reload", onTap: () => location.reload() });
+  });
+}
 
 // A search can arrive in the address, like /?q=volcanoes.
 const startQuery = new URLSearchParams(location.search).get("q");
