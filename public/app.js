@@ -538,6 +538,9 @@ document.addEventListener("keydown", (e) => {
 
 /* ---------- Start ---------- */
 
+// A search can arrive in the address, like /?q=volcanoes.
+const startQuery = new URLSearchParams(location.search).get("q");
 showView(location.hash.slice(1));
+if (startQuery) submit(startQuery);
 // Start the proxy in the background so the first page loads fast.
 whenReady().catch(() => {});

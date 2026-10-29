@@ -52,11 +52,19 @@ function googleSearchQuery(url) {
   return null;
 }
 
-// A tiny page that asks Minimalist (the page around the frame) to search.
+// A tiny page that asks Minimalist (the page around the frame) to search. If
+// nothing answers, for example because an older copy of Minimalist is still
+// open, it reloads Minimalist with the search in its address instead.
 function searchHandoff(query) {
-  const data = JSON.stringify({ minimalistSearch: query }).replace(/</g, "\\u003c");
+  const data = JSON.stringify(query).replace(/</g, "\\u003c");
   return new Response(
-    `<!doctype html><meta charset="utf-8"><script>parent.postMessage(${data}, location.origin);</script>`,
+    `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<p style="margin-top:40vh;font:15px system-ui,sans-serif;color:#78716c;text-align:center">Searching…</p>
+<script>
+const query = ${data};
+top.postMessage({ minimalistSearch: query }, location.origin);
+setTimeout(() => { top.location.href = "/?q=" + encodeURIComponent(query); }, 1500);
+</script>`,
     { headers: { "content-type": "text/html; charset=utf-8" } }
   );
 }
