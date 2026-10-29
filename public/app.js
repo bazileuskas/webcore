@@ -288,6 +288,13 @@ async function search(query) {
   }
 }
 
+// Google searches made inside a site come here instead (see sw.js).
+window.addEventListener("message", (e) => {
+  if (e.origin === location.origin && typeof e.data?.minimalistSearch === "string") {
+    search(e.data.minimalistSearch);
+  }
+});
+
 function resultItem(result) {
   const url = new URL(result.url);
   const item = document.createElement("li");

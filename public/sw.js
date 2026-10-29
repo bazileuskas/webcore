@@ -25,10 +25,50 @@ scramjet.addEventListener("request", (event) => {
   event.requestHeaders.Referer = `${self.location.origin}/`;
 });
 
+// Google treats searches from cloud servers like Render's as suspicious and
+// answers with a robot check that often can't load through a proxy. So when a
+// page inside Minimalist opens a Google search, show Minimalist's own results
+// instead; Google never gets the search.
+function proxiedUrl(requestUrl) {
+  const url = new URL(requestUrl);
+  if (!url.pathname.startsWith("/scramjet/")) return null;
+  try {
+    const real = new URL(decodeURIComponent(url.pathname.slice("/scramjet/".length)));
+    // A search form adds its fields to the end of the proxied address.
+    for (const [name, value] of url.searchParams) real.searchParams.append(name, value);
+    return real;
+  } catch {
+    return null;
+  }
+}
+
+function googleSearchQuery(url) {
+  if (!url || !/^(www\.)?google\.[a-z.]+$/.test(url.hostname)) return null;
+  if (url.pathname === "/search") return url.searchParams.get("q");
+  if (url.pathname.startsWith("/sorry/")) {
+    const next = url.searchParams.get("continue");
+    try { return next ? googleSearchQuery(new URL(next)) : null; } catch { return null; }
+  }
+  return null;
+}
+
+// A tiny page that asks Minimalist (the page around the frame) to search.
+function searchHandoff(query) {
+  const data = JSON.stringify({ minimalistSearch: query }).replace(/</g, "\\u003c");
+  return new Response(
+    `<!doctype html><meta charset="utf-8"><script>parent.postMessage(${data}, location.origin);</script>`,
+    { headers: { "content-type": "text/html; charset=utf-8" } }
+  );
+}
+
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
 self.addEventListener("fetch", (event) => {
+  if (event.request.mode === "navigate") {
+    const query = googleSearchQuery(proxiedUrl(event.request.url));
+    if (query) return event.respondWith(searchHandoff(query));
+  }
   event.respondWith(
     (async () => {
       await scramjet.loadConfig();
