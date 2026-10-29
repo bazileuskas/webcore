@@ -5,7 +5,7 @@ Minimalist through your own server.
 
 The **•••** button in the bottom-left corner opens the menu:
 
-- **Browse**: the browser itself.
+- **Browse**: the browser itself, with Minimalist's own search results page.
 - **Games**: 130+ free web games, searchable and sorted by category.
 - **Watch**: search and watch YouTube videos without going to youtube.com.
 - **AI**: [Duck.ai](https://duck.ai), DuckDuckGo's free AI chat.
@@ -40,13 +40,30 @@ Node.js and supports websockets works. For example, on [Render](https://render.c
 
 Render sets `PORT` for you and gives you an `https://…onrender.com` address.
 
+## Set up search
+
+Search results come from [Tavily](https://tavily.com), whose free plan gives
+1,000 searches a month with no credit card. Each visitor can do 30 searches
+every 10 minutes, so one person can't use them all up.
+
+1. Make a free account at https://app.tavily.com and copy your API key
+   (it starts with `tvly-`).
+2. On Render, open the service, go to **Environment**, and add a variable
+   named `TAVILY_API_KEY` with your key as the value. Save, and Render restarts
+   the site.
+
+To use search when running it on your computer, set the variable before
+starting: `$env:TAVILY_API_KEY = "tvly-..."` in PowerShell, then `npm start`.
+Never put the key in the code: anyone who can see the code could use it.
+
 ## Change things
 
 | What | Where |
 | --- | --- |
 | Games and apps | `public/catalog.js`: copy a line and change it |
 | Quick links on the home page | `public/index.html` (the `.links` buttons) |
-| Search engine, AI site | the top of `public/app.js` |
+| Search | `src/search.js` (server) and the "Search results" part of `public/app.js` |
+| AI site | the top of `public/app.js` |
 | Colors | the variables at the top of `public/style.css` |
 | Server | `src/index.js` (video search is in `src/youtube.js`) |
 

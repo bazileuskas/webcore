@@ -30,6 +30,18 @@
       <footer class="hint">press <kbd>/</kbd> to search</footer>
     </main>
 
+    <main id="results" class="results" hidden>
+      <header class="results-head">
+        <button id="results-home" class="results-logo" type="button" aria-label="Home">minimalist<span class="dot">.</span></button>
+        <form id="results-form" class="search" autocomplete="off">
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="results-input" type="search" placeholder="Search or type a URL" spellcheck="false" autocapitalize="off" aria-label="Search or type a URL">
+        </form>
+      </header>
+      <p id="results-status" class="results-status" role="status" aria-live="polite"></p>
+      <ol id="results-list" class="results-list"></ol>
+    </main>
+
     <div id="browser" class="browser" hidden>
       <header class="bar">
         <button id="btn-home" class="icon" type="button" title="Home" aria-label="Home">

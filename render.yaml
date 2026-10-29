@@ -8,3 +8,6 @@ services:
     buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /
+    envVars:
+      - key: TAVILY_API_KEY
+        sync: false # set in Render's dashboard, never stored in the code

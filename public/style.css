@@ -155,6 +155,117 @@ kbd {
   text-align: center;
 }
 
+/* Search results */
+
+.results {
+  max-width: 760px;
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 28px 24px 112px;
+}
+
+.results-head {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.results-logo {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: -0.05em;
+  cursor: pointer;
+}
+
+.results-head .search { flex: 1; }
+
+.results-head .search input {
+  height: 46px;
+  font-size: 15px;
+}
+
+.results-status {
+  margin: 28px 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  margin: 32px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.result-link {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.result-site {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.result-site span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.result-site img {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.result-title {
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.result-link:hover .result-title,
+.result-link:focus-visible .result-title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.result-link:focus-visible { outline: none; }
+
+.result-snippet {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+@media (max-width: 560px) {
+  .results { padding: 20px 16px 104px; }
+  .results-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .results-head .search { width: 100%; }
+}
+
 /* Browser */
 
 .browser {
@@ -639,6 +750,14 @@ kbd {
   font-size: 14px;
   box-shadow: var(--shadow);
   transform: translateX(-50%);
+  cursor: pointer;
+}
+
+.toast small {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.65;
 }
 
 @media (max-width: 480px) {

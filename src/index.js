@@ -7,6 +7,7 @@ import { server as wisp, logging } from "@mercuryworkshop/wisp-js/server";
 import { scramjetPath } from "@mercuryworkshop/scramjet/path";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 import { searchVideos } from "./youtube.js";
+import { searchWeb, SearchError } from "./search.js";
 
 const publicPath = fileURLToPath(new URL("../public/", import.meta.url));
 // This package has no Node entry point that gives its folder, so find it directly.
@@ -16,11 +17,45 @@ const port = Number(process.env.PORT) || 8080;
 logging.set_level(logging.WARN);
 
 const app = express();
+// Render's front door passes on each visitor's address, which the search
+// limit below uses.
+app.set("trust proxy", 1);
 
 app.use(express.static(publicPath));
 app.use("/scram/", express.static(scramjetPath));
 app.use("/libcurl/", express.static(libcurlPath));
 app.use("/baremux/", express.static(baremuxPath));
+
+// Browse: Minimalist's own search results. Each visitor gets a limited number
+// of searches, so one person can't use up the free monthly searches.
+const SEARCH_LIMIT = 30;
+const SEARCH_WINDOW = 10 * 60 * 1000;
+const recentSearches = new Map();
+
+function underSearchLimit(ip) {
+  const now = Date.now();
+  if (recentSearches.size > 5000) recentSearches.clear();
+  const times = (recentSearches.get(ip) ?? []).filter((time) => now - time < SEARCH_WINDOW);
+  const allowed = times.length < SEARCH_LIMIT;
+  if (allowed) times.push(now);
+  recentSearches.set(ip, times);
+  return allowed;
+}
+
+app.get("/api/search", async (req, res) => {
+  const query = String(req.query.q ?? "").trim().slice(0, 200);
+  if (!query) return res.status(400).json({ error: "Type something to search for." });
+  if (!underSearchLimit(req.ip)) {
+    return res.status(429).json({ error: "That's a lot of searches. Wait a few minutes and try again." });
+  }
+  try {
+    res.json({ results: await searchWeb(query) });
+  } catch (err) {
+    if (err instanceof SearchError) return res.status(err.status).json({ error: err.message });
+    console.warn("Web search failed:", err.message);
+    res.status(502).json({ error: "Search isn't working right now. Try again in a moment." });
+  }
+});
 
 // Watch: video search, and thumbnails served from here so they load even
 // where YouTube's image server is blocked.

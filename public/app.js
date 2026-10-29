@@ -1,7 +1,6 @@
 "use strict";
 /*global $scramjetLoadController, BareMux, GAMES, APPS*/
 
-const SEARCH_ENGINE = "https://duckduckgo.com/?q=%s";
 const AI_URL = "https://duck.ai";
 const TRANSPORT = "/transport.mjs";
 const WISP_URL = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/wisp/`;
@@ -17,26 +16,43 @@ const scramjet = new ScramjetController({
     sync: "/scram/scramjet.sync.js",
   },
 });
-const connection = new BareMux.BareMuxConnection("/baremux/worker.js");
+let connection = null;
 
 /* ---------- Proxy setup ---------- */
 
 let ready = null;
 
+// Runs one part of the setup, naming that part if it fails, so an error on
+// someone's phone says where things went wrong.
+async function step(name, action) {
+  try {
+    return await action();
+  } catch (err) {
+    throw new Error(`Minimalist couldn't start (${name}): ${err?.message || err}`);
+  }
+}
+
 async function setup() {
   if (!("serviceWorker" in navigator)) {
-    throw new Error("This browser can't run Minimalist (service workers are off). Try Chrome or Edge, and make sure the site is on https.");
+    throw new Error("This browser has service workers turned off, so Minimalist can't run. Private browsing or strict privacy settings can do this.");
   }
-  // Remove the service worker left over from the old Ultraviolet version.
-  for (const registration of await navigator.serviceWorker.getRegistrations()) {
-    if (new URL(registration.scope).pathname.startsWith("/uv/")) await registration.unregister();
-  }
-  await scramjet.init();
-  await navigator.serviceWorker.register("/sw.js");
-  await navigator.serviceWorker.ready;
-  if ((await connection.getTransport()) !== TRANSPORT) {
-    await connection.setTransport(TRANSPORT, [{ websocket: WISP_URL }]);
-  }
+  await step("cleanup", async () => {
+    // Remove the service worker left over from the old Ultraviolet version.
+    for (const registration of await navigator.serviceWorker.getRegistrations()) {
+      if (new URL(registration.scope).pathname.startsWith("/uv/")) await registration.unregister();
+    }
+  });
+  await step("scramjet", () => scramjet.init());
+  await step("service worker", async () => {
+    await navigator.serviceWorker.register("/sw.js");
+    await navigator.serviceWorker.ready;
+  });
+  await step("connection", async () => {
+    connection ??= new BareMux.BareMuxConnection("/baremux/worker.js");
+    if ((await connection.getTransport()) !== TRANSPORT) {
+      await connection.setTransport(TRANSPORT, [{ websocket: WISP_URL }]);
+    }
+  });
 }
 
 function whenReady() {
@@ -50,14 +66,16 @@ function whenReady() {
 /* ---------- Messages ---------- */
 
 const toast = $("toast");
-let toastTimer;
 
+// Messages stay until tapped, so there's time to read them.
 function showMessage(message) {
-  toast.textContent = message;
+  const hint = document.createElement("small");
+  hint.textContent = "Tap to close";
+  toast.replaceChildren(message, hint);
   toast.hidden = false;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { toast.hidden = true; }, 5000);
 }
+
+toast.addEventListener("click", () => { toast.hidden = true; });
 
 /* ---------- Sections and menu ---------- */
 
@@ -103,14 +121,27 @@ document.addEventListener("click", (e) => {
 /* ---------- Browse ---------- */
 
 const home = $("home");
+const results = $("results");
 const browser = $("browser");
 const loader = $("loader");
 const homeInput = $("home-input");
+const resultsInput = $("results-input");
+const resultsStatus = $("results-status");
+const resultsList = $("results-list");
 const barInput = $("bar-input");
 const page = scramjet.createFrame($("frame"));
 
-// Turns whatever the user typed into a real URL: full URLs pass through,
-// things that look like a domain get https://, everything else is a search.
+// Which of Browse's three screens is showing: the start page, search results,
+// or a website.
+function showScreen(screen) {
+  home.hidden = screen !== home;
+  results.hidden = screen !== results;
+  browser.hidden = screen !== browser;
+  if (screen !== browser) page.frame.src = "about:blank";
+}
+
+// Turns what the user typed into a URL: full URLs pass through, things that
+// look like a domain get https://. Anything else is a search, so it gives null.
 function toUrl(input) {
   const text = input.trim();
   try {
@@ -120,12 +151,23 @@ function toUrl(input) {
   if (!/\s/.test(text) && /^[^/]+\.[a-z]{2,}(?:[/:?#]|$)/i.test(text)) {
     return `https://${text}`;
   }
-  return SEARCH_ENGINE.replace("%s", encodeURIComponent(text));
+  return null;
 }
 
-async function openSite(input) {
-  if (!input.trim()) return;
-  const url = toUrl(input);
+function submit(input) {
+  const text = input.trim();
+  if (!text) return;
+  const url = toUrl(text);
+  if (url) openSite(url);
+  else search(text);
+}
+
+// Set when a site is opened from the results, so Back on its first page
+// returns to them.
+let fromResults = false;
+let firstUrl = null;
+
+async function openSite(url, { viaResults = false } = {}) {
   try {
     await whenReady();
   } catch (err) {
@@ -133,22 +175,22 @@ async function openSite(input) {
     return;
   }
   showView("browse");
-  home.hidden = true;
-  browser.hidden = false;
+  showScreen(browser);
+  fromResults = viaResults;
+  firstUrl = null;
   barInput.value = url;
   loader.hidden = false;
   page.go(url);
 }
 
 function showHome() {
-  browser.hidden = true;
-  home.hidden = false;
-  page.frame.src = "about:blank";
+  showScreen(home);
   homeInput.value = "";
   homeInput.focus();
 }
 
 page.addEventListener("urlchange", (e) => {
+  firstUrl ??= e.url;
   if (document.activeElement !== barInput) barInput.value = e.url;
 });
 page.addEventListener("navigate", () => { loader.hidden = false; });
@@ -156,13 +198,19 @@ page.frame.addEventListener("load", () => { loader.hidden = true; });
 
 $("home-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  openSite(homeInput.value);
+  submit(homeInput.value);
+});
+
+$("results-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  resultsInput.blur();
+  submit(resultsInput.value);
 });
 
 $("bar-form").addEventListener("submit", (e) => {
   e.preventDefault();
   barInput.blur();
-  openSite(barInput.value);
+  submit(barInput.value);
 });
 
 barInput.addEventListener("focus", () => barInput.select());
@@ -171,14 +219,82 @@ for (const button of document.querySelectorAll(".links button")) {
   button.addEventListener("click", () => openSite(button.dataset.url));
 }
 
+$("results-home").addEventListener("click", showHome);
 $("btn-home").addEventListener("click", showHome);
-$("btn-back").addEventListener("click", () => page.back());
+$("btn-back").addEventListener("click", () => {
+  if (fromResults && barInput.value === firstUrl) showScreen(results);
+  else page.back();
+});
 $("btn-forward").addEventListener("click", () => page.forward());
 $("btn-reload").addEventListener("click", () => {
   loader.hidden = false;
   page.reload();
 });
 $("btn-fullscreen").addEventListener("click", () => page.frame.requestFullscreen?.());
+
+/* ---------- Search results ---------- */
+
+let searchCount = 0;
+
+async function search(query) {
+  const current = ++searchCount;
+  showView("browse");
+  showScreen(results);
+  resultsInput.value = query;
+  resultsStatus.hidden = false;
+  resultsStatus.textContent = "Searching…";
+  resultsList.replaceChildren();
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+    const data = await res.json().catch(() => ({}));
+    if (current !== searchCount) return;
+    if (!res.ok) throw new Error(data.error || "Search isn't working right now.");
+    resultsStatus.hidden = data.results.length > 0;
+    resultsStatus.textContent = "No results.";
+    resultsList.replaceChildren(...data.results.map(resultItem));
+  } catch (err) {
+    if (current === searchCount) resultsStatus.textContent = err.message || "Search isn't working right now.";
+  }
+}
+
+function resultItem(result) {
+  const url = new URL(result.url);
+  const item = document.createElement("li");
+  item.className = "result";
+
+  const link = document.createElement("button");
+  link.type = "button";
+  link.className = "result-link";
+  link.addEventListener("click", () => openSite(result.url, { viaResults: true }));
+
+  const site = document.createElement("span");
+  site.className = "result-site";
+  const icon = new Image();
+  icon.src = `/api/icon/${url.hostname}`;
+  icon.alt = "";
+  icon.loading = "lazy";
+  icon.addEventListener("error", () => icon.remove());
+  let path = url.pathname;
+  try { path = decodeURIComponent(path); } catch {}
+  const crumbs = path.split("/").filter(Boolean);
+  const label = document.createElement("span");
+  label.textContent = [url.hostname.replace(/^www\./, ""), ...crumbs].join(" › ");
+  site.append(icon, label);
+
+  const title = document.createElement("span");
+  title.className = "result-title";
+  title.textContent = result.title;
+
+  link.append(site, title);
+  item.append(link);
+  if (result.snippet) {
+    const snippet = document.createElement("p");
+    snippet.className = "result-snippet";
+    snippet.textContent = result.snippet;
+    item.append(snippet);
+  }
+  return item;
+}
 
 /* ---------- Tiles (Games and Apps) ---------- */
 
@@ -373,7 +489,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeDock();
   if (e.key !== "/" || e.target instanceof HTMLInputElement) return;
   const field = {
-    browse: home.hidden ? barInput : homeInput,
+    browse: !results.hidden ? resultsInput : !browser.hidden ? barInput : homeInput,
     games: gamesFilter,
     watch: watchInput,
   }[currentView];
