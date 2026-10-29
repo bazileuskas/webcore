@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Debug · Minimalist</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .debug { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; font-size: 13px; }
+    .debug h1 { font-weight: 300; letter-spacing: -0.04em; margin: 0 0 4px; }
+    .debug p { color: var(--muted); margin: 0 0 16px; }
+    .debug button { padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--field); cursor: pointer; margin: 0 8px 16px 0; }
+    .entry { padding: 10px 0; border-top: 1px solid var(--line); word-break: break-all; }
+    .entry b { font-weight: 600; }
+    .bad { color: #dc2626; }
+    .muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="debug">
+    <h1>debug<span class="dot">.</span></h1>
+    <p>What happened with Google's robot check on this device. Screenshot this page and send it.</p>
+    <button id="refresh" type="button">Refresh</button>
+    <button id="clear" type="button">Clear</button>
+    <div id="log"></div>
+  </main>
+  <script>
+    const log = document.getElementById("log");
+
+    async function show() {
+      let entries = [];
+      try {
+        entries = await (await fetch("/debug-log", { cache: "no-store" })).json();
+      } catch (err) {
+        log.textContent = "Couldn't read the log: " + err.message + ". Open Minimalist once first.";
+        return;
+      }
+      if (!entries.length) {
+        log.textContent = "Nothing recorded yet.";
+        return;
+      }
+      log.replaceChildren(...entries.map((e) => {
+        const row = document.createElement("div");
+        row.className = "entry";
+        const head = document.createElement("div");
+        const bad = e.error || e.status >= 400;
+        const status = document.createElement("b");
+        status.className = bad ? "bad" : "";
+        status.textContent = e.error ? "FAILED" : String(e.status);
+        head.append(status, ` ${e.method} · ${e.ms} ms · ${e.time}`);
+        const url = document.createElement("div");
+        url.className = "muted";
+        url.textContent = e.url;
+        row.append(head, url);
+        if (e.error || e.detail) {
+          const detail = document.createElement("div");
+          detail.className = "bad";
+          detail.textContent = e.error || e.detail;
+          row.append(detail);
+        }
+        return row;
+      }));
+    }
+
+    document.getElementById("refresh").addEventListener("click", show);
+    document.getElementById("clear").addEventListener("click", async () => {
+      await fetch("/debug-log", { method: "DELETE" });
+      show();
+    });
+    show();
+  </script>
+</body>
+</html>
