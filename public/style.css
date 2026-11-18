@@ -9,6 +9,9 @@
   --shadow: 0 1px 2px rgb(28 25 23 / 0.04), 0 8px 24px rgb(28 25 23 / 0.06);
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* A plain arrowhead with a thin outline; on clickable things it gets a dot. */
+  --cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v15l4.2-4.1 6.3-.3z' fill='%231c1917' stroke='%23fafaf9' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, default;
+  --cursor-click: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v15l4.2-4.1 6.3-.3z' fill='%231c1917' stroke='%23fafaf9' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='16.5' cy='18.5' r='2.2' fill='%231c1917' stroke='%23fafaf9' stroke-width='1.2'/%3E%3C/svg%3E") 5 3, pointer;
   color-scheme: light;
 }
 
@@ -22,6 +25,8 @@
     --field: #161413;
     --hover: #1f1c1a;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
+    --cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v15l4.2-4.1 6.3-.3z' fill='%23f5f5f4' stroke='%230c0a09' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, default;
+    --cursor-click: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v15l4.2-4.1 6.3-.3z' fill='%23f5f5f4' stroke='%230c0a09' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='16.5' cy='18.5' r='2.2' fill='%23f5f5f4' stroke='%230c0a09' stroke-width='1.2'/%3E%3C/svg%3E") 5 3, pointer;
     color-scheme: dark;
   }
 }
@@ -39,7 +44,20 @@ html, body {
 
 button, input { font: inherit; color: inherit; }
 
+html { cursor: var(--cursor); }
+a, button, summary, [role="button"] { cursor: var(--cursor-click); }
+input, textarea { cursor: text; }
+
 [hidden] { display: none !important; }
+
+/* The moving dot background (background.js), behind everything else. */
+#backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
 
 .view {
   position: fixed;
@@ -126,7 +144,7 @@ button, input { font: inherit; color: inherit; }
   background: none;
   color: var(--muted);
   font-size: 14px;
-  cursor: pointer;
+  cursor: var(--cursor-click);
   transition: background 0.15s, color 0.15s;
 }
 
@@ -178,7 +196,7 @@ kbd {
   font-size: 28px;
   font-weight: 300;
   letter-spacing: -0.05em;
-  cursor: pointer;
+  cursor: var(--cursor-click);
 }
 
 .results-head .search { flex: 1; }
@@ -210,7 +228,7 @@ kbd {
   border: 0;
   background: none;
   text-align: left;
-  cursor: pointer;
+  cursor: var(--cursor-click);
 }
 
 .result-site {
@@ -296,7 +314,7 @@ kbd {
   border-radius: 8px;
   background: none;
   color: var(--muted);
-  cursor: pointer;
+  cursor: var(--cursor-click);
   transition: background 0.15s, color 0.15s;
 }
 
@@ -413,7 +431,7 @@ kbd {
   background: none;
   color: var(--muted);
   font-size: 13px;
-  cursor: pointer;
+  cursor: var(--cursor-click);
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
@@ -447,7 +465,7 @@ kbd {
   border-radius: 14px;
   background: var(--field);
   text-align: left;
-  cursor: pointer;
+  cursor: var(--cursor-click);
   transition: transform 0.2s var(--ease), box-shadow 0.2s, border-color 0.2s;
 }
 
@@ -519,7 +537,7 @@ kbd {
   border: 0;
   background: none;
   text-align: left;
-  cursor: pointer;
+  cursor: var(--cursor-click);
 }
 
 .video-thumb {
@@ -629,7 +647,7 @@ kbd {
   background: var(--bg);
   color: var(--muted);
   box-shadow: var(--shadow);
-  cursor: pointer;
+  cursor: var(--cursor-click);
   transition: color 0.2s, transform 0.35s var(--ease);
 }
 
@@ -750,7 +768,7 @@ kbd {
   font-size: 14px;
   box-shadow: var(--shadow);
   transform: translateX(-50%);
-  cursor: pointer;
+  cursor: var(--cursor-click);
 }
 
 .toast small {
