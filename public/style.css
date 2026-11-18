@@ -9,9 +9,12 @@
   --shadow: 0 1px 2px rgb(28 25 23 / 0.04), 0 8px 24px rgb(28 25 23 / 0.06);
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  /* A plain arrowhead with a thin outline; on clickable things it gets a dot. */
-  --cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v15l4.2-4.1 6.3-.3z' fill='%231c1917' stroke='%23fafaf9' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, default;
-  --cursor-click: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v15l4.2-4.1 6.3-.3z' fill='%231c1917' stroke='%23fafaf9' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='16.5' cy='18.5' r='2.2' fill='%231c1917' stroke='%23fafaf9' stroke-width='1.2'/%3E%3C/svg%3E") 5 3, pointer;
+  /* A plain arrowhead with a thin outline; on clickable things it gets a dot.
+     Text boxes get a thin I-beam to match. 32px is as big as cursors can be
+     without browsers hiding them near the window's edge. */
+  --cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 3v21l6-5.8 9-.4z' fill='%231c1917' stroke='%23fafaf9' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") 4 3, default;
+  --cursor-click: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 3v21l6-5.8 9-.4z' fill='%231c1917' stroke='%23fafaf9' stroke-width='2' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='26' r='3' fill='%231c1917' stroke='%23fafaf9' stroke-width='1.6'/%3E%3C/svg%3E") 4 3, pointer;
+  --cursor-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32' fill='none' stroke-linecap='round'%3E%3Cpath d='M12 6h8M16 6v20M12 26h8' stroke='%23fafaf9' stroke-width='4'/%3E%3Cpath d='M12 6h8M16 6v20M12 26h8' stroke='%231c1917' stroke-width='1.8'/%3E%3C/svg%3E") 16 16, text;
   color-scheme: light;
 }
 
@@ -25,8 +28,9 @@
     --field: #161413;
     --hover: #1f1c1a;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
-    --cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v15l4.2-4.1 6.3-.3z' fill='%23f5f5f4' stroke='%230c0a09' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 5 3, default;
-    --cursor-click: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M5 3v15l4.2-4.1 6.3-.3z' fill='%23f5f5f4' stroke='%230c0a09' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='16.5' cy='18.5' r='2.2' fill='%23f5f5f4' stroke='%230c0a09' stroke-width='1.2'/%3E%3C/svg%3E") 5 3, pointer;
+    --cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 3v21l6-5.8 9-.4z' fill='%23f5f5f4' stroke='%230c0a09' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") 4 3, default;
+    --cursor-click: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 3v21l6-5.8 9-.4z' fill='%23f5f5f4' stroke='%230c0a09' stroke-width='2' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='26' r='3' fill='%23f5f5f4' stroke='%230c0a09' stroke-width='1.6'/%3E%3C/svg%3E") 4 3, pointer;
+    --cursor-text: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32' fill='none' stroke-linecap='round'%3E%3Cpath d='M12 6h8M16 6v20M12 26h8' stroke='%230c0a09' stroke-width='4'/%3E%3Cpath d='M12 6h8M16 6v20M12 26h8' stroke='%23f5f5f4' stroke-width='1.8'/%3E%3C/svg%3E") 16 16, text;
     color-scheme: dark;
   }
 }
@@ -46,7 +50,7 @@ button, input { font: inherit; color: inherit; }
 
 html { cursor: var(--cursor); }
 a, button, summary, [role="button"] { cursor: var(--cursor-click); }
-input, textarea { cursor: text; }
+input, textarea { cursor: var(--cursor-text); }
 
 [hidden] { display: none !important; }
 
