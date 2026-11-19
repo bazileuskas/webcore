@@ -95,6 +95,7 @@ function showView(view) {
   if (!VIEWS.includes(view)) view = "browse";
   currentView = view;
   for (const name of VIEWS) $(`view-${name}`).hidden = name !== view;
+  updateMiniPlayer();
   for (const link of dock.querySelectorAll("a")) {
     if (link.dataset.view === view) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
@@ -499,7 +500,67 @@ for (const chip of document.querySelectorAll("#watch-suggest .chip")) {
 $("player-close").addEventListener("click", () => {
   player.hidden = true;
   watchFrame.frame.src = "about:blank";
+  updateMiniPlayer();
 });
+
+/* ---------- Mini player ---------- */
+
+// Leaving Watch while a video is open shrinks it into a small floating
+// player that keeps playing over the rest of Minimalist, websites included.
+// It never moves in the page (that would restart the video); only its look
+// and position change.
+const watchView = $("view-watch");
+const playerBar = player.querySelector(".player-info");
+let miniSpot = null;
+
+try { miniSpot = JSON.parse(localStorage.getItem("miniSpot")); } catch {}
+
+function updateMiniPlayer() {
+  const mini = currentView !== "watch" && !player.hidden;
+  watchView.hidden = currentView !== "watch" && !mini;
+  if (mini) {
+    watchView.dataset.mini = "";
+    placeMiniPlayer();
+  } else {
+    delete watchView.dataset.mini;
+    player.removeAttribute("style");
+  }
+}
+
+// Puts the mini player where it was last dragged to, kept on screen.
+function placeMiniPlayer() {
+  if (!miniSpot || watchView.dataset.mini === undefined) return;
+  const { width, height } = player.getBoundingClientRect();
+  const x = Math.min(Math.max(miniSpot.x, 8), innerWidth - width - 8);
+  const y = Math.min(Math.max(miniSpot.y, 8), innerHeight - height - 8);
+  Object.assign(player.style, { left: `${x}px`, top: `${y}px`, right: "auto", bottom: "auto" });
+}
+
+playerBar.addEventListener("pointerdown", (e) => {
+  if (watchView.dataset.mini === undefined || e.target.closest("button")) return;
+  const start = player.getBoundingClientRect();
+  const offsetX = e.clientX - start.left;
+  const offsetY = e.clientY - start.top;
+  player.classList.add("dragging");
+  // Keeps the drag going even if the pointer slips off the bar.
+  try { playerBar.setPointerCapture(e.pointerId); } catch {}
+
+  const move = (ev) => {
+    miniSpot = { x: ev.clientX - offsetX, y: ev.clientY - offsetY };
+    placeMiniPlayer();
+  };
+  const end = () => {
+    player.classList.remove("dragging");
+    playerBar.removeEventListener("pointermove", move);
+    try { localStorage.setItem("miniSpot", JSON.stringify(miniSpot)); } catch {}
+  };
+  playerBar.addEventListener("pointermove", move);
+  playerBar.addEventListener("pointerup", end, { once: true });
+  playerBar.addEventListener("pointercancel", end, { once: true });
+});
+
+$("player-expand").addEventListener("click", () => showView("watch"));
+addEventListener("resize", placeMiniPlayer);
 
 /* ---------- AI ---------- */
 
