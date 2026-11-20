@@ -11,3 +11,5 @@ services:
     envVars:
       - key: TAVILY_API_KEY
         sync: false # set in Render's dashboard, never stored in the code
+      - key: ANTHROPIC_API_KEY
+        sync: false # for the AI section; set in Render's dashboard

@@ -1,7 +1,6 @@
 "use strict";
 /*global $scramjetLoadController, BareMux, GAMES, APPS*/
 
-const AI_URL = "https://duck.ai";
 const TRANSPORT = "/transport.mjs";
 const WISP_URL = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/wisp/`;
 const VIEWS = ["browse", "games", "watch", "ai", "apps"];
@@ -101,7 +100,8 @@ function showView(view) {
     else link.removeAttribute("aria-current");
   }
   history.replaceState(null, "", view === "browse" ? location.pathname : `#${view}`);
-  if (view === "ai") openAi();
+  // With a mouse, start typing straight away (on phones this would pop up the keyboard).
+  if (view === "ai" && matchMedia("(pointer: fine)").matches) chatInput.focus({ preventScroll: true });
 }
 
 function closeDock() {
@@ -564,20 +564,213 @@ addEventListener("resize", placeMiniPlayer);
 
 /* ---------- AI ---------- */
 
-const aiFrame = scramjet.createFrame($("ai-frame"));
-let aiOpened = false;
+// A chat with Claude through Minimalist's server (/api/chat), which streams
+// the answer back as server-sent events.
+const chatView = $("view-ai");
+const chatLog = $("chat-log");
+const chatEmpty = $("chat-empty");
+const chatForm = $("chat-form");
+const chatInput = $("chat-input");
+let chatHistory = [];
+let chatAbort = null;
 
-async function openAi() {
-  if (aiOpened) return;
-  aiOpened = true;
-  try {
-    await whenReady();
-    aiFrame.go(AI_URL);
-  } catch (err) {
-    aiOpened = false;
-    showMessage(err.message || String(err));
+function escapeHtml(text) {
+  return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+
+function inlineMarkdown(text) {
+  return text
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<em>$2</em>")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" data-url="$2">$1</a>');
+}
+
+// A small Markdown renderer for the AI's answers. Everything is escaped
+// first, so the only HTML in the result is what this function adds.
+function renderMarkdown(source) {
+  const html = [];
+  escapeHtml(source).split("```").forEach((part, index) => {
+    if (index % 2 === 1) {
+      html.push(`<pre><code>${part.replace(/^[\w+-]*\n/, "")}</code></pre>`);
+      return;
+    }
+    let list = null;
+    let paragraph = [];
+    const endParagraph = () => {
+      if (paragraph.length) html.push(`<p>${paragraph.map(inlineMarkdown).join("<br>")}</p>`);
+      paragraph = [];
+    };
+    const endList = () => {
+      if (list) html.push(`</${list}>`);
+      list = null;
+    };
+    for (const line of part.split("\n")) {
+      const bullet = line.match(/^\s*[-*•]\s+(.*)/);
+      const number = line.match(/^\s*(\d+)[.)]\s+(.*)/);
+      const heading = line.match(/^\s*#{1,6}\s+(.*)/);
+      if (bullet || number) {
+        endParagraph();
+        const type = bullet ? "ul" : "ol";
+        if (list !== type) {
+          endList();
+          html.push(type === "ol" ? `<ol start="${number[1]}">` : "<ul>");
+          list = type;
+        }
+        html.push(`<li>${inlineMarkdown(bullet ? bullet[1] : number[2])}</li>`);
+      } else if (heading) {
+        endParagraph();
+        endList();
+        html.push(`<h4>${inlineMarkdown(heading[1])}</h4>`);
+      } else if (!line.trim()) {
+        endParagraph();
+        endList();
+      } else {
+        endList();
+        paragraph.push(line);
+      }
+    }
+    endParagraph();
+    endList();
+  });
+  return html.join("");
+}
+
+// Reads server-sent events ("data: {...}" blocks) from a streamed response.
+async function* readEvents(body) {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) return;
+    buffer += decoder.decode(value, { stream: true });
+    let end;
+    while ((end = buffer.indexOf("\n\n")) !== -1) {
+      const block = buffer.slice(0, end);
+      buffer = buffer.slice(end + 2);
+      if (block.startsWith("data: ")) yield JSON.parse(block.slice(6));
+    }
   }
 }
+
+function nearBottom() {
+  return chatView.scrollHeight - chatView.scrollTop - chatView.clientHeight < 140;
+}
+
+function addBubble(kind, text = "") {
+  const bubble = document.createElement("div");
+  bubble.className = `bubble ${kind}`;
+  bubble.textContent = text;
+  chatLog.append(bubble);
+  chatView.scrollTo({ top: chatView.scrollHeight });
+  return bubble;
+}
+
+function addLine(bubble, kind, text) {
+  const line = document.createElement("p");
+  line.className = kind;
+  line.textContent = text;
+  bubble.append(line);
+}
+
+async function sendChat(text) {
+  text = text.trim();
+  if (!text || chatAbort) return;
+  chatEmpty.hidden = true;
+  chatInput.value = "";
+  sizeChatInput();
+  addBubble("user", text);
+  chatHistory.push({ role: "user", content: text });
+
+  const bubble = addBubble("ai");
+  bubble.innerHTML = '<span class="typing" aria-label="Thinking"><i></i><i></i><i></i></span>';
+  let answer = "";
+  let notice = "";
+  let failure = "";
+  let frame = 0;
+  const render = () => {
+    frame = 0;
+    const follow = nearBottom();
+    bubble.innerHTML = renderMarkdown(answer);
+    if (follow) chatView.scrollTo({ top: chatView.scrollHeight });
+  };
+
+  chatAbort = new AbortController();
+  chatForm.classList.add("busy");
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ messages: chatHistory }),
+      signal: chatAbort.signal,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "The AI isn't working right now.");
+    }
+    for await (const event of readEvents(res.body)) {
+      if (event.text) {
+        answer += event.text;
+        frame ||= requestAnimationFrame(render);
+      }
+      if (event.notice) notice = event.notice;
+      if (event.error) throw new Error(event.error);
+    }
+  } catch (err) {
+    failure = err.name === "AbortError" ? "" : err.message || "The AI isn't working right now.";
+    if (err.name === "AbortError") notice = "Stopped.";
+  }
+  cancelAnimationFrame(frame);
+  bubble.innerHTML = renderMarkdown(answer);
+  if (notice) addLine(bubble, "notice", notice);
+  if (failure) addLine(bubble, "error", failure);
+  // Keep the conversation in turns: a message that got no answer is left out.
+  if (answer) chatHistory.push({ role: "assistant", content: answer });
+  else chatHistory.pop();
+  chatAbort = null;
+  chatForm.classList.remove("busy");
+}
+
+function sizeChatInput() {
+  chatInput.style.height = "auto";
+  chatInput.style.height = `${Math.min(chatInput.scrollHeight, 200)}px`;
+}
+
+chatForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (chatAbort) chatAbort.abort();
+  else sendChat(chatInput.value);
+});
+
+chatInput.addEventListener("input", sizeChatInput);
+chatInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+    e.preventDefault();
+    chatForm.requestSubmit();
+  }
+});
+
+for (const chip of chatEmpty.querySelectorAll(".chip")) {
+  chip.addEventListener("click", () => sendChat(chip.textContent));
+}
+
+// Links in answers open in Browse.
+chatLog.addEventListener("click", (e) => {
+  const link = e.target.closest("a[data-url]");
+  if (!link) return;
+  e.preventDefault();
+  openSite(link.dataset.url);
+});
+
+$("chat-new").addEventListener("click", () => {
+  chatAbort?.abort();
+  chatHistory = [];
+  chatLog.replaceChildren(chatEmpty);
+  chatEmpty.hidden = false;
+  chatInput.value = "";
+  sizeChatInput();
+});
 
 /* ---------- Apps ---------- */
 
@@ -587,11 +780,12 @@ $("apps-grid").replaceChildren(...APPS.map((app) => tile({ ...app, image: `/api/
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeDock();
-  if (e.key !== "/" || e.target instanceof HTMLInputElement) return;
+  if (e.key !== "/" || e.target.closest?.("input, textarea")) return;
   const field = {
     browse: !results.hidden ? resultsInput : !browser.hidden ? barInput : homeInput,
     games: gamesFilter,
     watch: watchInput,
+    ai: chatInput,
   }[currentView];
   if (!field) return;
   e.preventDefault();

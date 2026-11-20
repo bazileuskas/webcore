@@ -119,10 +119,10 @@
     else running = false;
   }
 
-  // Websites and the AI chat cover the whole background, so there's no point
-  // animating behind them.
+  // Websites cover the whole background, so there's no point animating
+  // behind them.
   function covered() {
-    return ["frame", "ai-frame"].some((id) => document.getElementById(id)?.getClientRects().length > 0);
+    return document.getElementById("frame").getClientRects().length > 0;
   }
 
   function start() {

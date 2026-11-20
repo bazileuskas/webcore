@@ -10,7 +10,7 @@ The **•••** button in the bottom-left corner opens the menu:
   that site.
 - **Games**: 130+ free web games, searchable and sorted by category.
 - **Watch**: search and watch YouTube videos without going to youtube.com.
-- **AI**: [Duck.ai](https://duck.ai), DuckDuckGo's free AI chat.
+- **AI**: a chat with Claude, set up as a friendly schoolwork helper.
 - **Apps**: Discord, Spotify, Google Docs, Desmos and more.
 
 Built on [Scramjet](https://github.com/MercuryWorkshop/scramjet) (rewrites
@@ -58,6 +58,25 @@ To use search when running it on your computer, set the variable before
 starting: `$env:TAVILY_API_KEY = "tvly-..."` in PowerShell, then `npm start`.
 Never put the key in the code: anyone who can see the code could use it.
 
+## Set up the AI (for a parent)
+
+The AI section talks to [Claude](https://claude.com) through Anthropic's API.
+Anthropic accounts are for adults and are paid per use: with the model
+Minimalist uses (Claude Opus 5.5), a typical message costs about 1 to 2 cents.
+
+1. Make an account at https://platform.claude.com, add credit, and create an
+   API key.
+2. In the Console's limits settings, set a monthly spend limit you're
+   comfortable with.
+3. On Render, open the service, go to **Environment**, and add a variable
+   named `ANTHROPIC_API_KEY` with the key as the value. Save.
+
+Minimalist also limits the AI itself: 20 messages per person every 10 minutes,
+answers of at most about 3,000 words, and 150 messages a day for the whole
+site. Change the daily limit by adding an `AI_DAILY_LIMIT` variable on Render.
+To make it cheaper, change `MODEL` in `src/chat.js` to `claude-haiku-5-5`
+(far cheaper per message, but less smart).
+
 ## Change things
 
 | What | Where |
@@ -65,7 +84,7 @@ Never put the key in the code: anyone who can see the code could use it.
 | Games and apps | `public/catalog.js`: copy a line and change it |
 | Quick links on the home page | `public/index.html` (the `.links` buttons) |
 | Search | `src/search.js` (server) and the "Search results" part of `public/app.js` |
-| AI site | the top of `public/app.js` |
+| AI | `src/chat.js` (model, limits, instructions) and the "AI" part of `public/app.js` |
 | Colors | the variables at the top of `public/style.css` |
 | Server | `src/index.js` (video search is in `src/youtube.js`) |
 

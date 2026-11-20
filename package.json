@@ -11,6 +11,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@anthropic-ai/sdk": "1.6.0",
     "@mercuryworkshop/bare-mux": "2.1.9",
     "@mercuryworkshop/libcurl-transport": "2.0.6",
     "@mercuryworkshop/scramjet": "1.1.0",

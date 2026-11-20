@@ -46,7 +46,7 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
-button, input { font: inherit; color: inherit; }
+button, input, textarea { font: inherit; color: inherit; }
 
 html { cursor: var(--cursor); }
 a, button, summary, [role="button"] { cursor: var(--cursor-click); }
@@ -698,6 +698,176 @@ kbd {
 
 @keyframes mini-in {
   from { opacity: 0; transform: translateY(10px) scale(0.96); }
+}
+
+/* AI chat */
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  max-width: 760px;
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 64px 24px 16px;
+}
+
+.chat .page-head { align-items: center; }
+
+.chat-log {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 24px;
+}
+
+.chat-empty {
+  margin: auto 0;
+  color: var(--muted);
+  font-size: 15px;
+  text-align: center;
+}
+
+.chat-empty .chips { justify-content: center; }
+
+.bubble {
+  max-width: 100%;
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.bubble.user {
+  align-self: flex-end;
+  max-width: 80%;
+  padding: 10px 16px;
+  border-radius: 18px 18px 4px 18px;
+  background: var(--hover);
+  white-space: pre-wrap;
+}
+
+.bubble.ai { align-self: flex-start; }
+.bubble.ai > :first-child { margin-top: 0; }
+.bubble.ai > :last-child { margin-bottom: 0; }
+.bubble.ai p, .bubble.ai ul, .bubble.ai ol { margin: 0 0 10px; }
+.bubble.ai ul, .bubble.ai ol { padding-left: 22px; }
+.bubble.ai li + li { margin-top: 4px; }
+.bubble.ai h4 { margin: 16px 0 6px; font-size: 15px; font-weight: 600; }
+
+.bubble.ai code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.bubble.ai :not(pre) > code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--hover);
+}
+
+.bubble.ai pre {
+  margin: 0 0 10px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border-radius: 10px;
+  background: var(--hover);
+  line-height: 1.45;
+}
+
+.bubble.ai a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.bubble .notice { color: var(--muted); font-size: 13px; }
+.bubble .error { color: #dc2626; font-size: 14px; }
+
+/* Three dots while the AI thinks. */
+.typing { display: inline-flex; gap: 4px; padding: 8px 0; }
+
+.typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--faint);
+  animation: typing 1.2s infinite ease-in-out;
+}
+
+.typing i:nth-child(2) { animation-delay: 0.15s; }
+.typing i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes typing {
+  0%, 60%, 100% { opacity: 0.3; transform: none; }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+
+.chat-form {
+  position: sticky;
+  bottom: 16px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 8px 8px 18px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--field);
+  box-shadow: var(--shadow);
+}
+
+.chat-form textarea {
+  flex: 1;
+  min-height: 24px;
+  max-height: 200px;
+  margin: 6px 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 15px;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+}
+
+.chat-form textarea::placeholder { color: var(--faint); }
+
+.chat-send {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.chat-send svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chat-send .stop-icon { display: none; fill: currentColor; stroke: none; }
+.chat-form.busy .send-icon { display: none; }
+.chat-form.busy .stop-icon { display: block; }
+
+.chat-note {
+  margin: 10px 0 0;
+  color: var(--faint);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Keep the message box clear of the menu button on narrow screens. */
+@media (max-width: 848px) {
+  .chat-form { margin-left: 52px; }
 }
 
 /* Menu */
